@@ -1,10 +1,15 @@
-use crate::constants::constant;
-use crate::types::RdbOk;
+use crate::constants::{constant, version};
+use crate::types::{RdbOk, RdbResult};
 
 use byteorder::{BigEndian, LittleEndian, ReadBytesExt};
 use std::io::{Cursor, Error, ErrorKind, Read};
 // use std::sync::Mutex;
 // use redis_canal_rs::constants;
+
+#[inline]
+fn other_error(desc: &'static str) -> Error {
+    Error::new(ErrorKind::Other, desc)
+}
 
 pub struct RdbParser<T: Read> {
     // input : Option<Mutex<Box<T>>>,
@@ -52,6 +57,48 @@ pub fn read_length_with_encoding<T: Read>(input: &mut T) -> Result<(u64, bool), 
         }
     }
     Ok((length, is_encoded))
+}
+
+pub fn read_length<R: Read>(input: &mut R) -> RdbResult<u64> {
+    let (length, _) = read_length_with_encoding(input)?;
+    Ok(length)
+}
+
+pub fn verify_magic<R: Read>(input: &mut R) -> RdbOk {
+    let mut magic = [0; 5];
+    match input.read(&mut magic) {
+        Ok(5) => (),
+        Ok(_) => return Err(other_error("Could not read enough bytes for the magic")),
+        Err(e) => return Err(e),
+    };
+
+    if magic == constant::RDB_MAGIC.as_bytes() {
+        Ok(())
+    } else {
+        Err(other_error("Invalid magic string"))
+    }
+}
+
+pub fn verify_version<R: Read>(input: &mut R) -> RdbOk {
+    let mut version = [0; 4];
+    match input.read(&mut version) {
+        Ok(4) => (),
+        Ok(_) => return Err(other_error("Could not read enough bytes for the version")),
+        Err(e) => return Err(e),
+    };
+
+    let version = (version[0] - 48) as u32 * 1000
+        + (version[1] - 48) as u32 * 100
+        + (version[2] - 48) as u32 * 10
+        + (version[3] - 48) as u32;
+
+    let is_ok = version >= version::SUPPORTED_MINIMUM && version <= version::SUPPORTED_MAXIMUM;
+
+    if is_ok {
+        Ok(())
+    } else {
+        Err(other_error("Version not supported"))
+    }
 }
 
 // #[cfg(test)]
