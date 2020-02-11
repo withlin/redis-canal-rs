@@ -40,8 +40,8 @@ pub mod encoding_type {
 }
 
 pub mod encoding {
-    pub const INT8: u32 = 0;
-    pub const INT16: u32 = 1;
-    pub const INT32: u32 = 2;
-    pub const LZF: u32 = 3;
+    pub const INT8: u64 = 0;
+    pub const INT16: u64 = 1;
+    pub const INT32: u64 = 2;
+    pub const LZF: u64 = 3;
 }
