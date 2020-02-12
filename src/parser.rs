@@ -126,6 +126,8 @@ impl<T: Read, F: Formatter, L: Filter> RdbParser<T,F,L> {
             encoding_type::ZSET_ZIPLIST => self.read_sortedset_ziplist(key)?,
             encoding_type::HASH_ZIPLIST => self.read_hash_ziplist(key)?,
             encoding_type::LIST_QUICKLIST => self.read_quicklist(key)?,
+            encoding_type::STEAMLISTPACKS => (),
+            
             _ => panic!("Value Type not implemented: {}", value_type),
         };
 
