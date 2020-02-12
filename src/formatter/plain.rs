@@ -27,6 +27,11 @@ impl Plain {
     }
 }
 
+
+impl Drop for Plain {
+    fn drop(&mut self){}
+}
+
 impl Formatter for Plain {
     fn checksum(&mut self, checksum: &[u8]) {
         write_str(&mut self.out, "checksum ");

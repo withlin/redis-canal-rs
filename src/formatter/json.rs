@@ -34,7 +34,6 @@ impl JSON {
 fn encode_to_ascii(value: &[u8]) -> String {
     let s = unsafe { str::from_utf8_unchecked(value) };
     let result= serialize::to_string(&s);
-    // let mut a = String::new();
     let _result = match result {
         Ok(a) => a ,
         Err(error) => {
