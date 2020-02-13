@@ -4,8 +4,8 @@ pub mod version {
 }
 
 pub mod constant {
-    pub const RDB_6BITLEN: u8 = 0;
-    pub const RDB_14BITLEN: u8 = 1;
+    pub const RDB_6BITLEN: u8 = 0x00;
+    pub const RDB_14BITLEN: u8 = 0x01;
     pub const RDB_32BITLEN: u8 = 0x80;
     pub const RDB_64BITLEN: u8 = 0x81;
     pub const RDB_ENCVAL: u8 = 3;

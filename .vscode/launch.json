@@ -9,7 +9,7 @@
             "request": "launch",
             "name": "Launch",
             "program": "${workspaceFolder}/target/debug/redis-canal-rs",
-            "args": [],
+            "args": ["--format","json","/usr/ym/rust/redis-canal-rs/tests/dumps/redis_40_with_module.rdb"],
             "cwd": "${workspaceFolder}"
         }
         
