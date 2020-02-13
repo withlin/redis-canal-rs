@@ -48,3 +48,12 @@ pub mod encoding {
     pub const INT32: u64 = 2;
     pub const LZF: u64 = 3;
 }
+
+pub mod module {
+    pub const ModuleOpcodeEOF: u8 = 0; // End of module value.
+    pub const ModuleOpcodeSInt: u8 = 1;
+    pub const ModuleOpcodeUInt: u8 = 2;
+    pub const ModuleOpcodeFloat: u8 = 3;
+    pub const ModuleOpcodeDouble: u8 = 4;
+    pub const ModuleOpcodeString: u8 = 5;
+}

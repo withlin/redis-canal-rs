@@ -12,7 +12,7 @@ use crate::helper;
 use helper::read_exact;
 
 #[doc(hidden)]
-use crate::constants::{constant, encoding, encoding_type, op_code, version};
+use crate::constants::{constant, encoding, encoding_type, module, op_code, version};
 
 #[doc(hidden)]
 pub use crate::types::{
@@ -657,8 +657,8 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
             encoding_type::ZSET => self.read_sorted_set(key, EncodingType::ZSET)?,
             encoding_type::HASH => self.read_hash(key)?,
             encoding_type::ZSET2 => self.read_sorted_set(key, EncodingType::ZSET2)?,
-            encoding_type::MODULE => self.skip_moudle()?, //noting to do  just skip it                           //noting to do
-            encoding_type::MODULE2 => self.skip_moudle()?, //noting to do  just skip it
+            encoding_type::MODULE => (), //not support it                        //noting to do
+            encoding_type::MODULE2 => self.read_moudle()?,
             encoding_type::HASH_ZIPMAP => self.read_hash_zipmap(key)?,
             encoding_type::LIST_ZIPLIST => self.read_list_ziplist(key)?,
             encoding_type::SET_INTSET => self.read_set_intset(key)?,
@@ -673,9 +673,36 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
         Ok(())
     }
 
-    fn skip_moudle(&mut self) -> RdbOk {
+    fn read_moudle(&mut self) -> RdbOk {
         read_length(&mut self.input)?;
-        // println!("not support moudle read moudle length:{}",len );
+        self.skip_moudle()?;
+        Ok(())
+    }
+
+    fn skip_moudle(&mut self) -> RdbOk {
+        let mut optcode = read_length(&mut self.input)?;
+        while optcode != module::ModuleOpcodeEOF as u64 {
+            match optcode {
+                optcode if optcode == module::ModuleOpcodeSInt as u64 => {
+                    read_length(&mut self.input)?;
+                }
+                optcode if optcode == module::ModuleOpcodeUInt as u64 => {
+                    read_length(&mut self.input)?;
+                }
+                optcode if optcode == module::ModuleOpcodeFloat as u64 => {
+                    read_length(&mut self.input)?;
+                }
+                optcode if optcode == module::ModuleOpcodeString as u64 => {
+                    read_blob(&mut self.input)?;
+                }
+                optcode if optcode == module::ModuleOpcodeDouble as u64 => {
+                    read_length(&mut self.input)?;
+                }
+                _ => println!("Unknown module opcode: {}", optcode),
+            }
+            optcode = read_length(&mut self.input)?;
+        }
+
         Ok(())
     }
 

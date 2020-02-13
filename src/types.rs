@@ -24,6 +24,15 @@ pub enum Type {
     Hash,
 }
 
+pub enum Module {
+    ModuleOpcodeEOF = 0, // End of module value.
+    ModuleOpcodeSInt = 1,
+    ModuleOpcodeUInt = 2,
+    ModuleOpcodeFloat = 3,
+    ModuleOpcodeDouble = 4,
+    ModuleOpcodeString = 5,
+}
+
 impl Type {
     pub fn from_encoding(enc_type: u8) -> Type {
         match enc_type {
