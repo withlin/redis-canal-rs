@@ -2,9 +2,9 @@
 use super::write_str;
 use crate::formatter::Formatter;
 // use serialize::hex::ToHex;
+use crate::types::EncodingType;
 use std::io;
 use std::io::Write;
-use crate::types::EncodingType;
 
 pub struct Plain {
     out: Box<Write + 'static>,
@@ -27,9 +27,8 @@ impl Plain {
     }
 }
 
-
 impl Drop for Plain {
-    fn drop(&mut self){}
+    fn drop(&mut self) {}
 }
 
 impl Formatter for Plain {

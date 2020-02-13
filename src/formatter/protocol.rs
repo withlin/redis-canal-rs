@@ -2,12 +2,12 @@
 
 use super::write_str;
 use crate::formatter::Formatter;
+use crate::types::EncodingType;
 use std::io;
 use std::io::Write;
-use crate::types::EncodingType;
 
 pub struct Protocol {
-    out: Box<Write + 'static>,
+    out: Box<dyn Write + 'static>,
     last_expiry: Option<u64>,
 }
 

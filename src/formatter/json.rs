@@ -2,11 +2,11 @@
 
 use super::write_str;
 use crate::formatter::Formatter;
+use crate::types::EncodingType;
 use serialize::Result;
 use std::io;
 use std::io::Write;
 use std::str;
-use crate::types::EncodingType;
 
 pub struct JSON {
     out: Box<dyn Write + 'static>,
@@ -33,15 +33,12 @@ impl JSON {
 
 fn encode_to_ascii(value: &[u8]) -> String {
     let s = unsafe { str::from_utf8_unchecked(value) };
-    let result= serialize::to_string(&s);
+    let result = serialize::to_string(&s);
     let _result = match result {
-        Ok(a) => a ,
-        Err(error) => {
-            panic!("encode_to_ascii error: {:?}", error)
-        },
+        Ok(a) => a,
+        Err(error) => panic!("encode_to_ascii error: {:?}", error),
     };
     _result
-    
 }
 
 impl JSON {

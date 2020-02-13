@@ -1,17 +1,16 @@
-extern crate redis_canal_rs as rdb;
 extern crate getopts;
+extern crate redis_canal_rs as rdb;
 extern crate regex;
-use std::env;
-use std::io::{BufReader,Write};
-use std::fs::File;
-use std::path::Path;
 use getopts::Options;
 use regex::Regex;
+use std::env;
+use std::fs::File;
+use std::io::{BufReader, Write};
+use std::path::Path;
 
 fn print_usage(program: &str, opts: Options) {
     let brief = format!("Usage: {} [options] dump.rdb", program);
     print!("{}", opts.usage(&brief));
-
 }
 
 pub fn main() {
@@ -19,15 +18,34 @@ pub fn main() {
     let program = args.next().unwrap();
     let mut opts = Options::new();
 
-    opts.optopt("f", "format", "Format to output. Valid: json, plain, nil, protocol", "FORMAT");
-    opts.optopt("k", "keys", "Keys to show. Can be a regular expression", "KEYS");
-    opts.optmulti("d", "databases", "Database to show. Can be specified multiple times", "DB");
-    opts.optmulti("t", "type", "Type to show. Can be specified multiple times", "TYPE");
+    opts.optopt(
+        "f",
+        "format",
+        "Format to output. Valid: json, plain, nil, protocol",
+        "FORMAT",
+    );
+    opts.optopt(
+        "k",
+        "keys",
+        "Keys to show. Can be a regular expression",
+        "KEYS",
+    );
+    opts.optmulti(
+        "d",
+        "databases",
+        "Database to show. Can be specified multiple times",
+        "DB",
+    );
+    opts.optmulti(
+        "t",
+        "type",
+        "Type to show. Can be specified multiple times",
+        "TYPE",
+    );
     opts.optflag("h", "help", "print this help menu");
 
-
     let matches = match opts.parse(args) {
-        Ok(m) => { m  }
+        Ok(m) => m,
         Err(e) => {
             println!("{}\n", e);
             print_usage(&program, opts);
@@ -36,8 +54,8 @@ pub fn main() {
     };
 
     if matches.opt_present("h") {
-         print_usage(&program, opts);
-         return;
+        print_usage(&program, opts);
+        return;
     }
 
     let mut filter = rdb::filter::Simple::new();
@@ -88,17 +106,16 @@ pub fn main() {
         match &f[..] {
             "json" => {
                 res = rdb::parse(reader, rdb::formatter::JSON::new(), filter);
-            },
+            }
             "plain" => {
                 res = rdb::parse(reader, rdb::formatter::Plain::new(), filter);
-            },
+            }
             "nil" => {
                 res = rdb::parse(reader, rdb::formatter::Nil::new(), filter);
-            },
+            }
             "protocol" => {
                 res = rdb::parse(reader, rdb::formatter::Protocol::new(), filter);
-
-            },
+            }
             _ => {
                 println!("Unknown format: {}\n", f);
                 print_usage(&program, opts);
@@ -109,7 +126,7 @@ pub fn main() {
     }
 
     match res {
-        Ok(()) => {},
+        Ok(()) => {}
         Err(e) => {
             println!("");
             let mut stderr = std::io::stderr();

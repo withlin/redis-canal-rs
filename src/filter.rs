@@ -1,23 +1,30 @@
-use std::str;
-use regex::Regex;
 use crate::types::Type;
+use regex::Regex;
+use std::str;
 
 pub trait Filter {
-    fn matches_db(&self, _db: u64) -> bool { true }
-    fn matches_type(&self, _enc_type: u8) -> bool { true }
-    fn matches_key(&self, _key: &[u8]) -> bool { true }
-
+    fn matches_db(&self, _db: u64) -> bool {
+        true
+    }
+    fn matches_type(&self, _enc_type: u8) -> bool {
+        true
+    }
+    fn matches_key(&self, _key: &[u8]) -> bool {
+        true
+    }
 }
 
 #[derive(Default)]
 pub struct Simple {
     databases: Vec<u64>,
     types: Vec<Type>,
-    keys: Option<Regex>
+    keys: Option<Regex>,
 }
 
 impl Simple {
-    pub fn new() -> Self { Simple::default() }
+    pub fn new() -> Self {
+        Simple::default()
+    }
 
     pub fn add_database(&mut self, db: u64) {
         self.databases.push(db);
@@ -43,7 +50,7 @@ impl Filter for Simple {
 
     fn matches_type(&self, enc_type: u8) -> bool {
         if self.types.is_empty() {
-            return true
+            return true;
         }
 
         let typ = Type::from_encoding(enc_type);
@@ -54,7 +61,7 @@ impl Filter for Simple {
         match self.keys.clone() {
             None => true,
             Some(re) => {
-                let key = unsafe{str::from_utf8_unchecked(key)};
+                let key = unsafe { str::from_utf8_unchecked(key) };
                 re.is_match(key)
             }
         }

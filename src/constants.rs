@@ -13,7 +13,7 @@ pub mod constant {
 }
 
 pub mod op_code {
-    pub const MouduleAux :u8 = 247;
+    pub const MouduleAux: u8 = 247;
     pub const Idle: u8 = 248;
     pub const Freq: u8 = 249;
     pub const AUX: u8 = 250;
