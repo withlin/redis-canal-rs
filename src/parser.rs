@@ -1,5 +1,5 @@
-use byteorder::{BigEndian, LittleEndian, ReadBytesExt};
 use byteorder::ByteOrder;
+use byteorder::{BigEndian, LittleEndian, ReadBytesExt};
 use lzf;
 use std::io::Error as IoError;
 use std::io::ErrorKind as IoErrorKind;
@@ -293,7 +293,7 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
                     let mut buf = [0; 8];
                     self.input.read(&mut buf)?;
                     let score = LittleEndian::read_f64(&buf);
-                    
+
                     self.formatter.sorted_set_element(key, score, &val);
 
                     set_items -= 1;
@@ -658,7 +658,7 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
             encoding_type::HASH => self.read_hash(key)?,
             encoding_type::ZSET2 => self.read_sorted_set(key, EncodingType::ZSET2)?,
             encoding_type::MODULE => self.skip_moudle()?, //noting to do  just skip it                           //noting to do
-            encoding_type::MODULE2 => self.skip_moudle()?, //noting to do  just skip it  
+            encoding_type::MODULE2 => self.skip_moudle()?, //noting to do  just skip it
             encoding_type::HASH_ZIPMAP => self.read_hash_zipmap(key)?,
             encoding_type::LIST_ZIPLIST => self.read_list_ziplist(key)?,
             encoding_type::SET_INTSET => self.read_set_intset(key)?,
