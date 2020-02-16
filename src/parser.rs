@@ -694,7 +694,7 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
             encoding_type::ZSET_ZIPLIST => self.read_sortedset_ziplist(key)?,
             encoding_type::HASH_ZIPLIST => self.read_hash_ziplist(key)?,
             encoding_type::LIST_QUICKLIST => self.read_quicklist(key)?,
-            encoding_type::STEAMLISTPACKS => (),
+            encoding_type::STEAMLISTPACKS => self.skip_read_steam()?,
 
             _ => panic!("Value Type not implemented: {}", value_type),
         };
@@ -702,7 +702,7 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
         Ok(())
     }
 
-    fn read_steam(&mut self) -> RdbOk {
+    fn skip_read_steam(&mut self) -> RdbOk {
         let mut listpacks = read_length(&mut self.input)?;
         while listpacks > 0 {
             read_blob(&mut self.input)?;
@@ -715,12 +715,12 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
         let _ = format!("{}-{}", entry1, entry2);
         let mut cgroups = read_length(&mut self.input)?;
         let entrys: &mut Vec<StreamGroupPendingEntry> = &mut Vec::new();
-        let mut consumerGroups: Vec<ConsumerGroup> = Vec::new();
+        let mut consumer_groups: Vec<ConsumerGroup> = Vec::new();
         while cgroups > 0 {
             let cgname = read_blob(&mut self.input)?;
             let entry1 = read_length(&mut self.input)?;
             let entry2 = read_length(&mut self.input)?;
-            let lasteCGEntryID = format!("{}-{}", entry1, entry2);
+            let laste_cg_entry_id = format!("{}-{}", entry1, entry2);
             let pending = read_length(&mut self.input)?;
             for _ in 0..pending {
                 let mut buf = [0; 16];
@@ -734,7 +734,6 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
                 });
             }
             let  consumers = read_length(&mut self.input)?;
-            let mut consumers = read_length(&mut self.input)?;
             let mut centrys: Vec<StreamConsumer> = Vec::new();
             for _ in 0..consumers {
                 let cname = read_blob(&mut self.input)?;
@@ -755,11 +754,11 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
                 });
             }
 
-            consumerGroups.push(ConsumerGroup {
+            consumer_groups.push(ConsumerGroup {
                 name: cgname,
                 pending: entrys.to_vec(),
                 consumers: centrys,
-                last_entry_id: lasteCGEntryID,
+                last_entry_id: laste_cg_entry_id,
             });
             cgroups -= 1;
         }
