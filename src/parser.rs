@@ -725,7 +725,7 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
                     id:buf,
                 });
             }
-            let mut  consumers = read_length(&mut self.input)?;
+            let  consumers = read_length(&mut self.input)?;
             let mut centrys: Vec<StreamConsumer> = Vec::new();
             for _ in 0..consumers {
                 let cname = read_blob(&mut self.input)?;
