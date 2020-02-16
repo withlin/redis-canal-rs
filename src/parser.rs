@@ -735,11 +735,11 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
                     id: buf,
                 });
             }
-            let  consumers = read_length(&mut self.input)?;
+            let consumers = read_length(&mut self.input)?;
             let mut centrys: Vec<StreamConsumer> = Vec::new();
             for _ in 0..consumers {
                 let cname = read_blob(&mut self.input)?;
-                let mut buf = [0;8];
+                let mut buf = [0; 8];
                 self.input.read(&mut buf)?;
                 let stime = LittleEndian::read_u64(&buf);
                 let cpending = read_length(&mut self.input)?;
