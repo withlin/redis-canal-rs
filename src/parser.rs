@@ -694,7 +694,7 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
             encoding_type::ZSET_ZIPLIST => self.read_sortedset_ziplist(key)?,
             encoding_type::HASH_ZIPLIST => self.read_hash_ziplist(key)?,
             encoding_type::LIST_QUICKLIST => self.read_quicklist(key)?,
-            encoding_type::STEAMLISTPACKS => self.skip_read_steam()?,
+            encoding_type::STEAMLISTPACKS => self.skip_steam()?,
 
             _ => panic!("Value Type not implemented: {}", value_type),
         };
@@ -702,7 +702,7 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
         Ok(())
     }
 
-    fn skip_read_steam(&mut self) -> RdbOk {
+    fn skip_steam(&mut self) -> RdbOk {
         let mut listpacks = read_length(&mut self.input)?;
         while listpacks > 0 {
             read_blob(&mut self.input)?;
@@ -725,7 +725,9 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
             for _ in 0..pending {
                 let mut buf = [0; 16];
                 self.input.read(&mut buf)?;
-                let dtime = LittleEndian::read_u64(&buf);
+                let mut dtime_buf = [0; 8];
+                self.input.read(&mut dtime_buf)?;
+                let dtime = LittleEndian::read_u64(&dtime_buf);
                 let dcount = read_length(&mut self.input)?;
                 entrys.push(StreamGroupPendingEntry {
                     d_count: dcount,
@@ -737,7 +739,7 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
             let mut centrys: Vec<StreamConsumer> = Vec::new();
             for _ in 0..consumers {
                 let cname = read_blob(&mut self.input)?;
-                let mut buf = [0, 8];
+                let mut buf = [0;8];
                 self.input.read(&mut buf)?;
                 let stime = LittleEndian::read_u64(&buf);
                 let cpending = read_length(&mut self.input)?;
