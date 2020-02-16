@@ -28,13 +28,23 @@ pub struct RdbParser<R: Read, F: Formatter, L: Filter> {
 }
 
 struct StreamGroupPendingEntry {
-    id: [u8;16],
+    id: [u8; 16],
     d_time: u64,
     d_count: u64,
 }
 
+impl Clone for StreamGroupPendingEntry {
+    fn clone(&self) -> Self {
+        Self {
+            id: self.id.clone(),
+            d_time: self.d_time,
+            d_count: self.d_count,
+        }
+    }
+}
+
 struct ConsumerGroup {
-    name:Vec<u8>,
+    name: Vec<u8>,
     last_entry_id: String,
     pending: Vec<StreamGroupPendingEntry>,
     consumers: Vec<StreamConsumer>,
@@ -45,8 +55,6 @@ struct StreamConsumer {
     seen_time: u64,
     pending: Vec<Vec<u8>>,
 }
-
-
 
 #[inline]
 fn other_error(desc: &'static str) -> IoError {
@@ -678,7 +686,7 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
             encoding_type::ZSET => self.read_sorted_set(key, EncodingType::ZSET)?,
             encoding_type::HASH => self.read_hash(key)?,
             encoding_type::ZSET2 => self.read_sorted_set(key, EncodingType::ZSET2)?,
-            encoding_type::MODULE => (), //not support it 
+            encoding_type::MODULE => (), //not support it
             encoding_type::MODULE2 => self.read_moudle()?,
             encoding_type::HASH_ZIPMAP => self.read_hash_zipmap(key)?,
             encoding_type::LIST_ZIPLIST => self.read_list_ziplist(key)?,
@@ -706,58 +714,57 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
         let entry2 = read_length(&mut self.input)?;
         let _ = format!("{}-{}", entry1, entry2);
         let mut cgroups = read_length(&mut self.input)?;
-        let mut entrys: Vec<StreamGroupPendingEntry> = Vec::new();
+        let entrys: &mut Vec<StreamGroupPendingEntry> = &mut Vec::new();
         let mut consumerGroups: Vec<ConsumerGroup> = Vec::new();
-        while cgroups >0 {
+        while cgroups > 0 {
             let cgname = read_blob(&mut self.input)?;
             let entry1 = read_length(&mut self.input)?;
             let entry2 = read_length(&mut self.input)?;
             let lasteCGEntryID = format!("{}-{}", entry1, entry2);
-            let pending =read_length(&mut self.input)?;
+            let pending = read_length(&mut self.input)?;
             for _ in 0..pending {
                 let mut buf = [0; 16];
                 self.input.read(&mut buf)?;
                 let dtime = LittleEndian::read_u64(&buf);
                 let dcount = read_length(&mut self.input)?;
-                entrys.push(StreamGroupPendingEntry{
-                    d_count:dcount,
-                    d_time:dtime,
-                    id:buf,
+                entrys.push(StreamGroupPendingEntry {
+                    d_count: dcount,
+                    d_time: dtime,
+                    id: buf,
                 });
             }
             let  consumers = read_length(&mut self.input)?;
+            let mut consumers = read_length(&mut self.input)?;
             let mut centrys: Vec<StreamConsumer> = Vec::new();
             for _ in 0..consumers {
                 let cname = read_blob(&mut self.input)?;
-                let mut buf = [0,8];
+                let mut buf = [0, 8];
                 self.input.read(&mut buf)?;
                 let stime = LittleEndian::read_u64(&buf);
                 let cpending = read_length(&mut self.input)?;
-                let  mut pending_ids:Vec<Vec<u8>> = Vec::new();
+                let mut pending_ids: Vec<Vec<u8>> = Vec::new();
                 for _ in 0..cpending {
                     let mut eid = vec![0; 16];
                     self.input.read(&mut eid)?;
                     pending_ids.push(eid);
                 }
-                centrys.push(StreamConsumer{
-                    name:cname,
-                    seen_time:stime,
-                    pending:pending_ids,
+                centrys.push(StreamConsumer {
+                    name: cname,
+                    seen_time: stime,
+                    pending: pending_ids,
                 });
-
             }
-            consumerGroups.push(ConsumerGroup{
-                name:cgname,
-                pending:entrys,
-                consumers:centrys,
-                last_entry_id:lasteCGEntryID,
+
+            consumerGroups.push(ConsumerGroup {
+                name: cgname,
+                pending: entrys.to_vec(),
+                consumers: centrys,
+                last_entry_id: lasteCGEntryID,
             });
             cgroups -= 1;
         }
         Ok(())
-        
     }
-    
 
     fn read_moudle(&mut self) -> RdbOk {
         read_length(&mut self.input)?;

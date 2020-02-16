@@ -1,4 +1,4 @@
-extern crate rdb;
+extern crate redis_canal_rs as rdb;
 use rdb::parser::{
     read_blob, read_length, read_length_with_encoding, verify_magic, verify_version,
 };
