@@ -686,7 +686,7 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
             encoding_type::ZSET => self.read_sorted_set(key, EncodingType::ZSET)?,
             encoding_type::HASH => self.read_hash(key)?,
             encoding_type::ZSET2 => self.read_sorted_set(key, EncodingType::ZSET2)?,
-            encoding_type::MODULE => (), //not support it
+            encoding_type::MODULE => panic!("Not support value type: {}", value_type), //not support it
             encoding_type::MODULE2 => self.read_moudle()?,
             encoding_type::HASH_ZIPMAP => self.read_hash_zipmap(key)?,
             encoding_type::LIST_ZIPLIST => self.read_list_ziplist(key)?,
@@ -710,9 +710,8 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
             listpacks -= 1;
         }
         read_length(&mut self.input)?;
-        let entry1 = read_length(&mut self.input)?;
-        let entry2 = read_length(&mut self.input)?;
-        let _ = format!("{}-{}", entry1, entry2);
+        read_length(&mut self.input)?;
+        read_length(&mut self.input)?;
         let mut cgroups = read_length(&mut self.input)?;
         let entrys: &mut Vec<StreamGroupPendingEntry> = &mut Vec::new();
         let mut consumer_groups: Vec<ConsumerGroup> = Vec::new();
