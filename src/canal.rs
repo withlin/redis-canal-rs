@@ -57,7 +57,7 @@ impl Canal {
         version
     }
 
-    fn realMaster(&mut self) -> (String,String) {
+    fn real_master(&mut self) -> (String,String) {
         let mut  host:String = String::from("");
         let mut  port:String = String::from("");
         match self.redisInfo.get("Replication") {
@@ -68,14 +68,48 @@ impl Canal {
                     },
                     None => {},
                 }
+                match server.get("master_port"){
+                    Some(rs) => {
+                        port = rs.to_string();
+                    },
+                    None => {},
+                }
+                match server.get("master_replid"){
+                    Some(rs) => {
+                        self.replid = rs.to_string();
+                    },
+                    None => {},
+                }
             },
             None => {},
         }
         (host,port)
     }
 
+    fn is_master(&mut self) -> bool {
+        let mut  role:String = String::from("");
+        match self.redisInfo.get("Replication"){
+            Some(rs) => {
+                match rs.get("role"){
+                    Some(rs) => {
+                        role = rs.to_string();
+                    },
+                    None => {},
+                }
+            },
+            None => {},
+        }
+        role == "master"
+    }
+
     // fn replconf(&mut self) -> CanalOk {
-       
+    //     let version = self.version();
+    //    if version.is_empty() {
+    //        Err("get version error")
+    //    }
+    //    if version.parse::<i32>().unwrap() >  400 {
+           
+    //    }
     // }
 
 
