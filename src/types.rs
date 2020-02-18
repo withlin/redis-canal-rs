@@ -1,6 +1,5 @@
 use crate::constants;
 use std::io::Error as IoError;
-
 use constants::encoding_type;
 
 #[derive(Debug, Clone)]
@@ -14,6 +13,7 @@ pub type RdbError = IoError;
 pub type RdbResult<T> = Result<T, RdbError>;
 
 pub type RdbOk = RdbResult<()>;
+
 
 #[derive(Debug, PartialEq)]
 pub enum Type {

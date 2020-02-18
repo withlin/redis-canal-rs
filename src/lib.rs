@@ -11,6 +11,8 @@ pub mod formatter;
 mod helper;
 pub mod parser;
 pub mod types;
+pub mod canal;
+
 
 use constants::*;
 use filter::*;
