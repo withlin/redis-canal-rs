@@ -1,3 +1,4 @@
+
 pub mod version {
     pub const SUPPORTED_MINIMUM: u32 = 1;
     pub const SUPPORTED_MAXIMUM: u32 = 9;
@@ -57,3 +58,5 @@ pub mod module {
     pub const ModuleOpcodeDouble: u8 = 4;
     pub const ModuleOpcodeString: u8 = 5;
 }
+
+

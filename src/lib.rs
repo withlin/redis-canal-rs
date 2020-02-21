@@ -12,6 +12,7 @@ mod helper;
 pub mod parser;
 pub mod types;
 pub mod canal;
+pub mod resp;
 
 
 use constants::*;

@@ -60,6 +60,7 @@ impl Canal {
     fn real_master(&mut self) -> (String,String) {
         let mut  host:String = String::from("");
         let mut  port:String = String::from("");
+        // self.redisInfo.get("Replication").unwrap()
         match self.redisInfo.get("Replication") {
             Some(server) => {
                 match server.get("master_host"){

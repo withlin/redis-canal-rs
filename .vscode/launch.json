@@ -7,9 +7,15 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Launch",
-            "program": "${workspaceFolder}/target/debug/redis-canal-rs",
-            "args": ["--format","json","/usr/ym/rust/redis-canal-rs/tests/dumps/redis_50_with_streams.rdb"],
+            "name": "Debug executable 'redis-canal-rs'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=redis-canal-rs",
+                    "--package=redis-canal-rs"
+                ]
+            },
+            "args":["--format","json","/usr/ym/rust/redis-canal-rs/tests/dumps/hash_as_ziplist.rdb"],
             "cwd": "${workspaceFolder}"
         }
         
