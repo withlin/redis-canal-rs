@@ -15,7 +15,6 @@ pub enum Response {
     Array(Vec<Response>),
 }
 
-
 impl Response {
     /// Serializes the response into an array of bytes using Redis protocol.
     pub fn as_bytes(&self) -> Vec<u8> {

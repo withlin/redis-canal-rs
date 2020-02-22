@@ -1,6 +1,6 @@
 use crate::constants;
-use std::io::Error as IoError;
 use constants::encoding_type;
+use std::io::Error as IoError;
 
 #[derive(Debug, Clone)]
 pub enum ZiplistEntry {
@@ -13,7 +13,6 @@ pub type RdbError = IoError;
 pub type RdbResult<T> = Result<T, RdbError>;
 
 pub type RdbOk = RdbResult<()>;
-
 
 #[derive(Debug, PartialEq)]
 pub enum Type {
