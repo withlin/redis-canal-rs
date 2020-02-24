@@ -134,14 +134,13 @@ impl Canal {
 
     fn info(&mut self) -> redis::RedisResult<()> {
         cmd("info").query(&mut self.cfg.conn)?;
-        let mut val = self.cfg.conn.recv_response()?;
+        let val = self.cfg.conn.recv_response()?;
         let result: String = format!("{:?}", val);
         let  s: Vec<String> = result.split("\n").
         map(|s| s.to_string()).collect();
         let mut selection = String::from("");
         for x in s.iter() {
-            let mut line = x.trim();
-            let num = line.len() as i64;
+            let line = x.trim();
             if !line.is_empty() {
                 if x.starts_with("#") {
                     selection = String::from(&x[1..]);
