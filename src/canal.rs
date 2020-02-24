@@ -132,23 +132,32 @@ impl Canal {
         Ok(())
     }
 
-    // fn info(&mut self) -> redis::RedisResult<()> {
-    //     cmd("info").query(&mut self.cfg.conn)?;
-    //     let mut val = self.cfg.conn.recv_response()?;
-    //     let result = format!("{:?}", val);
-    //     let str_list: &str = &result[..];
-    //     let s:Vec<_> = str_list.split("\n").collect();
-    //     s.iter().for_each(|x|{
-    //         let line =String::from(*x).trim();
-    //         if line.is_empty() {
+    fn info(&mut self) -> redis::RedisResult<()> {
+        cmd("info").query(&mut self.cfg.conn)?;
+        let mut val = self.cfg.conn.recv_response()?;
+        let result: String = format!("{:?}", val);
+        let  s: Vec<String> = result.split("\n").
+        map(|s| s.to_string()).collect();
+        let mut selection = String::from("");
+        for x in s.iter() {
+            let mut line = x.trim();
+            let num = line.len() as i64;
+            if !line.is_empty() {
+                if x.starts_with("#") {
+                    selection = String::from(&x[1..]);
+                    continue;
+                }
+            }
+            let mut contentlist:Vec<String> = String::from(line)
+            .split(":").map(|s| s.to_string()).collect();
 
-    //         }else{
-
-    //         }
-    //     });
-    //     // for i in {
-    //     //     let line =str_list[i];
-    //     // }
-    //     Ok(())
-    // }
+            if contentlist.len() < 2 {
+                continue;
+            }
+            let mut map =  HashMap::new();
+            map.insert(contentlist.remove(0), contentlist.remove(1));
+            self.redisInfo.insert(selection.to_owned(), map);
+        }
+        Ok(())
+    }
 }
