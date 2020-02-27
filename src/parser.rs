@@ -1,5 +1,6 @@
 use byteorder::ByteOrder;
 use byteorder::{BigEndian, LittleEndian, ReadBytesExt};
+use bytes::{BufMut, BytesMut};
 use lzf;
 use std::io::Error as IoError;
 use std::io::ErrorKind as IoErrorKind;
@@ -99,14 +100,25 @@ pub fn read_length<R: Read>(input: &mut R) -> RdbResult<u64> {
 }
 
 pub fn verify_magic<R: Read>(input: &mut R) -> RdbOk {
-    let mut magic = [0; 5];
+    let mut r = String::from("");
+    loop {
+        let b = input.read_u8()? as char;
+        println!("{:?}",b);
+        if b == 'R' {
+            r = b.to_string();
+            break;
+        }
+    }
+
+    let mut magic = [0; 4];
     match input.read(&mut magic) {
-        Ok(5) => (),
+        Ok(4) => (),
         Ok(_) => return Err(other_error("Could not read enough bytes for the magic")),
         Err(e) => return Err(e),
     };
-
-    if magic == constant::RDB_MAGIC.as_bytes() {
+    let res = str::from_utf8(&magic).unwrap().to_owned();
+    r.push_str(&res);
+    if r == constant::RDB_MAGIC {
         Ok(())
     } else {
         Err(other_error("Invalid magic string"))

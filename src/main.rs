@@ -3,9 +3,12 @@ extern crate redis_canal_rs as rdb;
 extern crate regex;
 use getopts::Options;
 use regex::Regex;
+use std::collections::HashMap;
 use std::env;
 use std::fs::File;
+use std::io::prelude::*;
 use std::io::{BufReader, Write};
+use std::net::TcpStream;
 use std::path::Path;
 
 fn print_usage(program: &str, opts: Options) {
@@ -13,7 +16,15 @@ fn print_usage(program: &str, opts: Options) {
     print!("{}", opts.usage(&brief));
 }
 
-pub fn main() {
+pub fn main() -> redis::RedisResult<()> {
+    let addr = String::from("10.200.100.219:6379");
+    let mut canal = rdb::Canal::new(addr,0, -1);
+    canal.info()?;
+    canal.replconf()?;
+    Ok(())
+}
+
+pub fn main1() {
     let mut args = env::args();
     let program = args.next().unwrap();
     let mut opts = Options::new();
@@ -99,22 +110,22 @@ pub fn main() {
 
     let path = matches.free[0].clone();
     let file = File::open(&Path::new(&*path)).unwrap();
-    let reader = BufReader::new(file);
+    let mut reader = BufReader::new(file);
     let mut res = Ok(());
 
     if let Some(f) = matches.opt_str("f") {
         match &f[..] {
             "json" => {
-                res = rdb::parse(reader, rdb::formatter::JSON::new(), filter);
+                res = rdb::parse(&mut reader, rdb::formatter::JSON::new(), filter);
             }
             "plain" => {
-                res = rdb::parse(reader, rdb::formatter::Plain::new(), filter);
+                res = rdb::parse(&mut reader, rdb::formatter::Plain::new(), filter);
             }
             "nil" => {
-                res = rdb::parse(reader, rdb::formatter::Nil::new(), filter);
+                res = rdb::parse(&mut reader, rdb::formatter::Nil::new(), filter);
             }
             "protocol" => {
-                res = rdb::parse(reader, rdb::formatter::Protocol::new(), filter);
+                res = rdb::parse(&mut reader, rdb::formatter::Protocol::new(), filter);
             }
             _ => {
                 println!("Unknown format: {}\n", f);
@@ -122,7 +133,7 @@ pub fn main() {
             }
         }
     } else {
-        res = rdb::parse(reader, rdb::formatter::JSON::new(), filter);
+        res = rdb::parse(&mut reader, rdb::formatter::JSON::new(), filter);
     }
 
     match res {

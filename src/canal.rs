@@ -1,11 +1,15 @@
-use crate::filter::Filter;
+use crate::filter::*;
 use crate::formatter;
+use crate::parse;
 use crate::parser::RdbParser;
 use redis;
 use redis::{cmd, Connection};
 use std::collections::HashMap;
+use std::io::prelude::*;
 use std::io::BufReader;
 use std::io::Error;
+use std::net::TcpStream;
+use std::rc::Rc;
 
 pub type CanalError = Error;
 
@@ -13,200 +17,129 @@ pub type CanalResult<T> = Result<T, CanalError>;
 
 pub type CanalOk = CanalResult<()>;
 
-struct Config {
-    addr: String,
-    port: i8,
-    conn: Connection,
-    repl_master: bool,
+pub struct Canal {
+    pub conn: TcpStream,
+    pub repl_master: bool,
+    pub db: u8,
+    pub replid: String,
+    pub offset: i64,
+    pub redisInfo: Rc<Option<redis::InfoDict>>,
 }
 
-struct Canal {
-    cfg: Config,
-    db: u8,
-    replid: String,
-    offset: i64,
-    redisInfo: HashMap<String, HashMap<String, String>>,
-}
 
 impl Canal {
-    pub fn new_canal(&mut self, canal: Canal) -> Self {
+    pub fn new(addr: String, db: u8, offset: i64) -> Self {
         Canal {
-            cfg: canal.cfg,
-            db: canal.db,
-            replid: canal.replid,
-            offset: canal.offset,
-            redisInfo: canal.redisInfo,
+            conn: TcpStream::connect(addr).expect("error conntion"),
+            repl_master: false,
+            db: db,
+            replid: String::from(""),
+            offset: offset,
+            redisInfo: Rc::new(None),
         }
     }
 
-    fn version(&mut self) -> String {
-        let mut version: String = String::from("");
-        match self.redisInfo.get("Server") {
-            Some(server) => match server.get("redis_version") {
-                Some(v) => {
-                    version = v.to_string();
-                }
-                None => {}
-            },
-            None => {}
-        }
-        version
+    pub fn version(&mut self) -> String {
+        if let Some(info) = &*self.redisInfo {
+            let x: Option<String> = info.get("redis_version").unwrap();
+            return format!("{:?}", x);
+        };
+        "".to_string()
     }
 
-    fn real_master(&mut self) -> (String, String) {
-        let mut host: String = String::from("");
-        let mut port: String = String::from("");
-        // self.redisInfo.get("Replication").unwrap()
-        match self.redisInfo.get("Replication") {
-            Some(server) => {
-                match server.get("master_host") {
-                    Some(rs) => {
-                        host = rs.to_string();
-                    }
-                    None => {}
-                }
-                match server.get("master_port") {
-                    Some(rs) => {
-                        port = rs.to_string();
-                    }
-                    None => {}
-                }
-                match server.get("master_replid") {
-                    Some(rs) => {
-                        self.replid = rs.to_string();
-                    }
-                    None => {}
-                }
-            }
-            None => {}
+    pub fn is_master(&mut self) -> bool {
+        if let Some(info) = &*self.redisInfo {
+            let x: Option<String> = info.get("redis_version").unwrap();
+            let c = format!("{:?}", x);
+            return c == "master";
         }
-        (host, port)
+        false
     }
 
-    fn is_master(&mut self) -> bool {
-        let mut role: String = String::from("");
-        match self.redisInfo.get("Replication") {
-            Some(rs) => match rs.get("role") {
-                Some(rs) => {
-                    role = rs.to_string();
-                }
-                None => {}
-            },
-            None => {}
-        }
-        role == "master"
-    }
-
-    fn replconf(&mut self) -> redis::RedisResult<()> {
+    pub fn replconf(&mut self) -> redis::RedisResult<()> {
         let version = self.version();
-        // general connection handling
-        let client = redis::Client::open("redis://10.200.100.219:6379/")?;
-
-        let mut con = client.get_connection()?;
 
         if version.is_empty() {
             //should be return the error
             println!("get version error");
         }
-        if version > String::from("4.0.0") {
-            let mut res: String = cmd("REPLCONF")
-                .arg("listening")
-                .arg(self.cfg.port)
-                .query(&mut self.cfg.conn)?;
 
+        if version > String::from("4.0.0") {
+            let mut port = redis::cmd("REPLCONF");
+            port.arg("listening-port");
+            port.arg("6379");
+            self.conn
+                .write(port.get_packed_command().as_slice())
+                .expect("error conntion");
+            let mut b = [0; 4108];
+            self.conn.read(&mut b).expect("error conntion");
+            let c = redis::parse_redis_value(&b)?;
+            let res: String = redis::from_redis_value(&c)?;
             if res != "OK" {
-                //should return the error
                 println!("replconf listening port failed");
             }
-            res = cmd("REPLCONF")
-                .arg("capa")
-                .arg("psync2")
-                .query(&mut self.cfg.conn)?;
 
+            let mut ip = redis::cmd("REPLCONF");
+            ip.arg("ip-address");
+            ip.arg("10.100.200.200");
+            self.conn
+                .write(ip.get_packed_command().as_slice())
+                .expect("error conntion");
+            let mut b = [0; 4108];
+            self.conn.read(&mut b).expect("error conntion");
+            let c = redis::parse_redis_value(&b)?;
+            let res: String = redis::from_redis_value(&c)?;
             if res != "OK" {
-                //should return the error
-                println!("replconf capa psync2 failed");
-            }
-            if self.replid.is_empty() {
-                self.replid = String::from("?");
+                println!("replconf listening port failed");
             }
 
-            cmd("psync")
-                .arg(&self.replid)
-                .arg(self.offset)
-                .query(&mut self.cfg.conn)?;
+            let mut capa = redis::cmd("REPLCONF");
+            capa.arg("capa");
+            capa.arg("psync2");
+            self.conn
+                .write(capa.get_packed_command().as_slice())
+                .expect("error conntion");
+            let mut b = [0; 4108];
+            self.conn.read(&mut b).expect("error conntion");
+            let c = redis::parse_redis_value(&b)?;
+            let res: String = redis::from_redis_value(&c)?;
+            if res != "OK" {
+                println!("replconf listening port failed");
+            }
+
+            let mut capa = redis::cmd("psync");
+            capa.arg("?");
+            capa.arg("-1");
+            self.conn
+                .write(capa.get_packed_command().as_slice())
+                .expect("error conntion");
+            let filter = Simple::new();
+            let mut b = [0; 4180];
+            self.conn.read(&mut b).expect("error conntion");
+            let c = redis::parse_redis_value(&b)?;
+            let res: String = redis::from_redis_value(&c)?;
+            println!("{:?}", res);
+            parse(&mut self.conn, formatter::JSON::new(), filter)?;
         }
         Ok(())
     }
 
-    fn info(&mut self) -> redis::RedisResult<()> {
-        cmd("info").query(&mut self.cfg.conn)?;
-        let val = self.cfg.conn.recv_response()?;
-        let result: String = format!("{:?}", val);
-        let s: Vec<String> = result.split("\n").map(|s| s.to_string()).collect();
-        let mut selection = String::from("");
-        for x in s.iter() {
-            let line = x.trim();
-            if !line.is_empty() {
-                if x.starts_with("#") {
-                    selection = String::from(&x[1..]);
-                    continue;
-                }
-            }
-            let mut contentlist: Vec<String> = String::from(line)
-                .split(":")
-                .map(|s| s.to_string())
-                .collect();
-
-            if contentlist.len() < 2 {
-                continue;
-            }
-            let mut map = HashMap::new();
-            map.insert(contentlist.remove(0), contentlist.remove(1));
-            self.redisInfo.insert(selection.to_owned(), map);
-        }
+    pub fn info(&mut self) -> redis::RedisResult<()> {
+        self.conn
+            .write(redis::cmd("info").get_packed_command().as_slice())?;
+        let mut b = [0; 4108];
+        self.conn.read(&mut b)?;
+        let info: redis::InfoDict = redis::from_redis_value(&redis::parse_redis_value(&b)?)?;
+        self.redisInfo = Rc::new(Some(info));
+        Ok(())
+    }
+   
+    pub fn dump_and_parse(&mut self) -> redis::RedisResult<()> {
         Ok(())
     }
 
-    fn dump_and_parse(&mut self) -> redis::RedisResult<()> {
-        self.replconf()?;
-        Ok(())
-    }
-
-    fn handler(&mut self) -> redis::RedisResult<()> {
-        let mut flag: bool = true;
-        while flag {
-            // set h x *3\r\n$3\r\nset\r\n$1\r\nx\r\n
-            let val = self.cfg.conn.recv_response()?;
-            // let err =String::from("-");
-            // let integers  =String::from(":");
-            // let bulk_string =String::from("$");
-            // let sample_string =String::from("+");
-            // let arrays =String::from("*");
-            // let mut filter = redis_canal_rs::Sample
-            // match val  {
-            //     redis::Value::Data(ref vd) =>{
-            //         String::from(&vd[1..(*vd).len()]).starts_with("FULLRESYNC");
-
-            //     }
-            //     redis::Value::Bulk(ref b) =>{
-            //         (*b).iter().map(|x|x);
-            //     },
-            //     _ => (),
-            //     // err => (),
-            //     // integers => (),
-            //     // err => (),
-            //     // sample_string => ({
-            //     //     let result = format!("{:?}", val);
-            //     //     if result.starts_with("FULLRESYNC") {
-            //     //         unimplemented!();
-            //     //     }
-            //     // }),
-            //     // err => (),
-            //     //  _ => (),
-
-            // };
-        }
+    pub fn handler(&mut self) -> redis::RedisResult<()> {
+        
         Ok(())
     }
 }
