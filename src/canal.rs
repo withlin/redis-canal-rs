@@ -212,7 +212,6 @@ impl Canal {
                     v.extend_from_slice(&b.to_vec());
                     let c = redis::parse_redis_value(&v)?;
                     let res: String = redis::from_redis_value(&c)?;
-                    println!("{:?}", res);
                     if res.contains("FULLRESYNC") {
                         let filter = Simple::new();
                         parse(&mut self.conn, formatter::Plain::new(), filter)?;
