@@ -18,7 +18,7 @@ fn print_usage(program: &str, opts: Options) {
 
 pub fn main() -> redis::RedisResult<()> {
     let addr = String::from("10.200.100.219:6379");
-    let mut canal = rdb::Canal::new(addr,0, -1);
+    let mut canal = rdb::Canal::new(addr, 0, -1);
     canal.info()?;
     canal.replconf()?;
     Ok(())

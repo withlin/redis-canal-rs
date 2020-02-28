@@ -26,7 +26,6 @@ pub struct Canal {
     pub redisInfo: Rc<Option<redis::InfoDict>>,
 }
 
-
 impl Canal {
     pub fn new(addr: String, db: u8, offset: i64) -> Self {
         Canal {
@@ -56,6 +55,76 @@ impl Canal {
         false
     }
 
+    fn send_port(&mut self) -> redis::RedisResult<()> {
+        let mut port = redis::cmd("REPLCONF");
+        port.arg("listening-port");
+        port.arg(self.conn.local_addr()?.port());
+        self.conn
+            .write(port.get_packed_command().as_slice())
+            .expect("error conntion");
+        println!(
+            "Current tcp client listen port:{:?}",
+            self.conn.local_addr()?.port()
+        );
+        let mut b = [0; 4108];
+        self.conn.read(&mut b).expect("error conntion");
+        let c = redis::parse_redis_value(&b)?;
+        let res: String = redis::from_redis_value(&c)?;
+        if res != "OK" {
+            println!("replconf listening port failed");
+        }
+        Ok(())
+    }
+
+    fn send_ip(&mut self) -> redis::RedisResult<()> {
+        let mut ip = redis::cmd("REPLCONF");
+        ip.arg("ip-address");
+        ip.arg(format! {"{}",self.conn.local_addr()?.ip()});
+        self.conn
+            .write(ip.get_packed_command().as_slice())
+            .expect("error conntion");
+        let mut b = [0; 4108];
+        self.conn.read(&mut b).expect("error conntion");
+        let c = redis::parse_redis_value(&b)?;
+        let res: String = redis::from_redis_value(&c)?;
+        if res != "OK" {
+            println!("replconf listening port failed");
+        }
+        Ok(())
+    }
+
+    fn send_capa(&mut self) -> redis::RedisResult<()> {
+        let mut capa = redis::cmd("REPLCONF");
+        capa.arg("capa");
+        capa.arg("psync2");
+        self.conn
+            .write(capa.get_packed_command().as_slice())
+            .expect("error conntion");
+        let mut b = [0; 4108];
+        self.conn.read(&mut b).expect("error conntion");
+        let c = redis::parse_redis_value(&b)?;
+        let res: String = redis::from_redis_value(&c)?;
+        if res != "OK" {
+            println!("replconf listening port failed");
+        }
+        Ok(())
+    }
+
+    fn send_psync(&mut self) -> redis::RedisResult<()> {
+        let mut capa = redis::cmd("psync");
+        capa.arg("?");
+        capa.arg("-1");
+        self.conn
+            .write(capa.get_packed_command().as_slice())
+            .expect("error conntion");
+
+        let mut b = [0; 4180];
+        self.conn.read(&mut b).expect("error conntion");
+        let c = redis::parse_redis_value(&b)?;
+        let res: String = redis::from_redis_value(&c)?;
+        println!("{:?}", res);
+        Ok(())
+    }
     pub fn replconf(&mut self) -> redis::RedisResult<()> {
         let version = self.version();
 
@@ -65,60 +134,11 @@ impl Canal {
         }
 
         if version > String::from("4.0.0") {
-            let mut port = redis::cmd("REPLCONF");
-            port.arg("listening-port");
-            port.arg("6379");
-            self.conn
-                .write(port.get_packed_command().as_slice())
-                .expect("error conntion");
-            let mut b = [0; 4108];
-            self.conn.read(&mut b).expect("error conntion");
-            let c = redis::parse_redis_value(&b)?;
-            let res: String = redis::from_redis_value(&c)?;
-            if res != "OK" {
-                println!("replconf listening port failed");
-            }
-
-            let mut ip = redis::cmd("REPLCONF");
-            ip.arg("ip-address");
-            ip.arg("10.100.200.200");
-            self.conn
-                .write(ip.get_packed_command().as_slice())
-                .expect("error conntion");
-            let mut b = [0; 4108];
-            self.conn.read(&mut b).expect("error conntion");
-            let c = redis::parse_redis_value(&b)?;
-            let res: String = redis::from_redis_value(&c)?;
-            if res != "OK" {
-                println!("replconf listening port failed");
-            }
-
-            let mut capa = redis::cmd("REPLCONF");
-            capa.arg("capa");
-            capa.arg("psync2");
-            self.conn
-                .write(capa.get_packed_command().as_slice())
-                .expect("error conntion");
-            let mut b = [0; 4108];
-            self.conn.read(&mut b).expect("error conntion");
-            let c = redis::parse_redis_value(&b)?;
-            let res: String = redis::from_redis_value(&c)?;
-            if res != "OK" {
-                println!("replconf listening port failed");
-            }
-
-            let mut capa = redis::cmd("psync");
-            capa.arg("?");
-            capa.arg("-1");
-            self.conn
-                .write(capa.get_packed_command().as_slice())
-                .expect("error conntion");
             let filter = Simple::new();
-            let mut b = [0; 4180];
-            self.conn.read(&mut b).expect("error conntion");
-            let c = redis::parse_redis_value(&b)?;
-            let res: String = redis::from_redis_value(&c)?;
-            println!("{:?}", res);
+            self.send_ip()?;
+            self.send_port()?;
+            self.send_capa()?;
+            self.send_psync()?;
             parse(&mut self.conn, formatter::JSON::new(), filter)?;
         }
         Ok(())
@@ -133,13 +153,12 @@ impl Canal {
         self.redisInfo = Rc::new(Some(info));
         Ok(())
     }
-   
+
     pub fn dump_and_parse(&mut self) -> redis::RedisResult<()> {
         Ok(())
     }
 
     pub fn handler(&mut self) -> redis::RedisResult<()> {
-        
         Ok(())
     }
 }
