@@ -157,11 +157,11 @@ impl Canal {
             .write(psync.get_packed_command().as_slice())
             .expect("error conntion");
 
-        let mut b = [0; 4180];
-        self.conn.read(&mut b).expect("error conntion");
-        let c = redis::parse_redis_value(&b)?;
-        let res: String = redis::from_redis_value(&c)?;
-        println!("{:?}", res);
+        // let mut b = [0; 4180];
+        // self.conn.read(&mut b).expect("error conntion");
+        // let c = redis::parse_redis_value(&b)?;
+        // let res: String = redis::from_redis_value(&c)?;
+        // println!("{:?}", res);
         Ok(())
     }
     fn replconf(&mut self) -> redis::RedisResult<()> {
@@ -202,6 +202,11 @@ impl Canal {
     // }
 
     pub fn handler(&mut self) -> redis::RedisResult<()> {
+        if !self.password.is_empty() {
+            self.login_by_password()?;
+        }
+
+        self.info()?;
         self.replconf()?;
 
         loop {
@@ -222,8 +227,9 @@ impl Canal {
                     let res: String = redis::from_redis_value(&c)?;
                     println!("{:?}",res);
                     if res.contains("FULLRESYNC") {
+                        
                         let filter = Simple::new();
-                        parse(&mut self.conn, formatter::JSON::new(), filter)?;
+                        parse(&mut self.conn, formatter::Plain::new(), filter)?;
                     }
                     if res.contains("CONTINUE") {
                         let ss: Vec<&str> = res.split(" ").collect();
