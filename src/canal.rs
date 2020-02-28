@@ -227,6 +227,7 @@ impl Canal {
                     }
                 }
                 '*' => {
+                    //todo: will parse aof
                     println!("come in！");
                 }
                 _ => (),
