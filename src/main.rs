@@ -3,12 +3,9 @@ extern crate redis_canal_rs as rdb;
 extern crate regex;
 use getopts::Options;
 use regex::Regex;
-use std::collections::HashMap;
 use std::env;
 use std::fs::File;
-use std::io::prelude::*;
 use std::io::{BufReader, Write};
-use std::net::TcpStream;
 use std::path::Path;
 
 fn print_usage(program: &str, opts: Options) {
@@ -16,15 +13,14 @@ fn print_usage(program: &str, opts: Options) {
     print!("{}", opts.usage(&brief));
 }
 
-
 pub fn main() -> redis::RedisResult<()> {
     //10.1.1.232:7010 10.200.100.219:6379
     let addr = String::from("10.1.1.232:7010");
-    let password =  "".to_string();
+    let password = "omgredis50".to_string();
     let offset = -1;
     let db = 0;
-    let mut canal = rdb::Canal::new(addr,db, offset,password);
-    canal.handler()?;
+    let mut canal = rdb::Canal::new(addr, db, offset, password);
+    canal.dump_and_parse()?;
     Ok(())
 }
 
