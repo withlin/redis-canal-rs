@@ -15,9 +15,8 @@
                     "--package=redis-canal-rs"
                 ]
             },
-            "args":["--format","json","/usr/ym/rust/redis-canal-rs/tests/dumps/hash_as_ziplist.rdb"],
+            // "args":["--format","json","/usr/ym/rust/redis-canal-rs/tests/dumps/hash_as_ziplist.rdb"],
             "cwd": "${workspaceFolder}"
         }
-        
     ]
 }

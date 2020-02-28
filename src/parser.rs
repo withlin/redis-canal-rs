@@ -82,13 +82,13 @@ pub fn read_length_with_encoding<T: Read>(input: &mut T) -> Result<(u64, bool), 
             length = (((enc_type & 0x3F) as u64) << 8) | next_byte as u64;
         }
         constant::RDB_32BITLEN => {
-            length = input.read_u32::<BigEndian>()? as u64;
+            length = input.read_u32::<LittleEndian>()? as u64;
         }
         constant::RDB_64BITLEN => {
-            length = input.read_u64::<BigEndian>()?;
+            length = input.read_u64::<LittleEndian>()?;
         }
         _ => {
-            length = input.read_u64::<BigEndian>()?;
+            length = input.read_u32::<BigEndian>()? as u64;
         }
     }
     Ok((length, is_encoded))
@@ -234,6 +234,12 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
                     let auxval = read_blob(&mut self.input)?;
 
                     self.formatter.aux_field(&auxkey, &auxval);
+                }
+                op_code::Idle => {
+                    read_length(&mut self.input)?;
+                }
+                op_code::Freq => {
+                    self.input.read_u8()?;
                 }
                 _ => {
                     if self.filter.matches_db(last_database) {

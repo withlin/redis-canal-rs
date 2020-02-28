@@ -85,7 +85,7 @@ fn replconf(con: &mut redis::Connection) -> redis::RedisResult<()> {
 pub fn main() -> redis::RedisResult<()> {
     //10.1.1.232:7010 10.200.100.219:6379
     let addr = String::from("10.1.1.232:7010");
-    let mut canal = rdb::Canal::new(addr, 0, -1,"omgredis50".to_string());
+    let mut canal = rdb::Canal::new(addr, 0, -1, "omgredis50".to_string());
     canal.login_by_password()?;
     // canal.info()?;
     // canal.handler()?;
