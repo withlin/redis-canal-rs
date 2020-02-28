@@ -102,10 +102,10 @@ pub fn read_length<R: Read>(input: &mut R) -> RdbResult<u64> {
 pub fn verify_magic<R: Read>(input: &mut R) -> RdbOk {
     let mut r = String::from("");
     loop {
-        let b = input.read_u8()? as char;
-        println!("{:?}", b);
-        if b == 'R' {
-            r = b.to_string();
+        let buf = input.read_u8()? as char;
+        println!("{:?}", buf);
+        if buf == 'R' {
+            r = buf.to_string();
             break;
         }
     }
@@ -191,7 +191,6 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
     pub fn parse(&mut self) -> RdbOk {
         verify_magic(&mut self.input)?;
         verify_version(&mut self.input)?;
-
         self.formatter.start_rdb();
 
         let mut last_database: u64 = 0;
