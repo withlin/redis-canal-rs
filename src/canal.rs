@@ -227,10 +227,19 @@ impl Canal {
                     }
                 }
                 '*' => {
-                    //todo: will parse aof
-                    println!("come in！");
+                    
+                    let mut b = [0; 13];
+                    self.conn
+                        .read(&mut b)
+                        .expect("read byte");
+                    let mut v = Vec::new();
+                    v.extend_from_slice(&buf_array);
+                    v.extend_from_slice(&b.to_vec());
+                    let s = String::from_utf8(v).expect("Found invalid UTF-8");
+                    println!("{:?}",s);
+
                 }
-                _ => (),
+                _ => (println!("nothing to do!")),
             };
         }
         Ok(())

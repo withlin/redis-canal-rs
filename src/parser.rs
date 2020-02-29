@@ -103,6 +103,7 @@ pub fn verify_magic<R: Read>(input: &mut R) -> RdbOk {
     let mut r = String::from("");
     loop {
         let buf = input.read_u8()? as char;
+        println!("{:?}",buf);
         if buf == 'R' {
             r = buf.to_string();
             break;
@@ -206,12 +207,7 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
                 op_code::EOF => {
                     self.formatter.end_database(last_database);
                     self.formatter.end_rdb();
-
-                    let mut checksum = Vec::new();
-                    let len = self.input.read_to_end(&mut checksum)?;
-                    if len > 0 {
-                        self.formatter.checksum(&checksum);
-                    }
+                    self.read_eof()?;
                     break;
                 }
                 op_code::EXPIRETIME_MS => {
@@ -258,6 +254,15 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
             }
         }
 
+        Ok(())
+    }
+
+    fn read_eof(&mut self) -> RdbOk {
+        let mut buf = [0; 8];
+        let len = self.input.read(&mut buf)?;
+        if len > 0 {
+            self.formatter.checksum(&buf);
+        }
         Ok(())
     }
 
