@@ -103,7 +103,7 @@ pub fn verify_magic<R: Read>(input: &mut R) -> RdbOk {
     let mut r = String::from("");
     loop {
         let buf = input.read_u8()? as char;
-        println!("{:?}",buf);
+        println!("{:?}", buf);
         if buf == 'R' {
             r = buf.to_string();
             break;

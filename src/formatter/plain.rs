@@ -34,8 +34,7 @@ impl Drop for Plain {
 impl Formatter for Plain {
     fn checksum(&mut self, checksum: &[u8]) {
         write_str(&mut self.out, "checksum ");
-        let a =  hex::encode(checksum);
-        write_str(&mut self.out, &a);
+        write_str(&mut self.out, &hex::encode(checksum));
         write_str(&mut self.out, "\n");
     }
 
