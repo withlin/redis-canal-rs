@@ -30,11 +30,12 @@ pub fn main() -> redis::RedisResult<()> {
 
 ```
 
-## 接下来要做的东西
+## TODO
 - [ ] 断点续传继续完善
 - [ ] 代码重构
 - [ ] 支持async操作
 - [ ] 支持读取数据后输出的过滤
+- [ ] redis6.x
 
 ## 感谢
 * [rdb-rs](https://github.com/badboy/rdb-rs)
