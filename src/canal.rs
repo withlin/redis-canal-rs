@@ -11,6 +11,7 @@ use std::io::prelude::*;
 use std::io::Error;
 use std::net::TcpStream;
 use std::rc::Rc;
+use std::sync::atomic::{AtomicI64,Ordering};
 
 pub type CanalError = Error;
 
@@ -23,20 +24,21 @@ pub struct Canal {
     pub repl_master: bool,
     pub db: u8,
     pub replid: String,
-    pub offset: i64,
+    pub offset: AtomicI64,
     pub password: String,
     pub redisInfo: Rc<Option<redis::InfoDict>>,
 }
 
 impl Canal {
     pub fn new(addr: String, db: u8, offset: i64, password: String) -> Self {
+        let offs= AtomicI64::new(offset);
         Canal {
             conn: TcpStream::connect(addr).expect("error conntion"),
             repl_master: false,
             db: db,
             password: password,
             replid: String::from(""),
-            offset: offset,
+            offset:  offs,
             redisInfo: Rc::new(None),
         }
     }
@@ -189,6 +191,25 @@ impl Canal {
         Ok(())
     }
 
+    fn reply_ack(&mut self) -> redis::RedisResult<()>{
+        let mut psync = redis::cmd("psync");
+        psync.arg("ack");
+        psync.arg(self.offset());
+        self.conn
+            .write(psync.get_packed_command().as_slice())
+            .expect("send_psync error");
+        Ok(())
+    }
+
+    fn offset(&mut self) -> i64 {
+        self.offset.load(Ordering::Relaxed)
+    }
+
+    fn set_offset(&mut self,offs :i64) {
+        self.offset.fetch_add(offs, Ordering::Relaxed);
+    }
+
+
     fn handler(&mut self) -> redis::RedisResult<()> {
         if !self.password.is_empty() {
             self.login_by_password()?;
@@ -235,8 +256,9 @@ impl Canal {
                     let mut v = Vec::new();
                     v.extend_from_slice(&buf_array);
                     v.extend_from_slice(&b.to_vec());
-                    let s = String::from_utf8(v).expect("Found invalid UTF-8");
-                    println!("{:?}",s);
+                    let c = redis::parse_redis_value(&v)?;
+                    let res: Vec<String> = redis::from_redis_value(&c)?;
+                    println!("{:?}",res[0]);
 
                 }
                 _ => (println!("nothing to do!")),

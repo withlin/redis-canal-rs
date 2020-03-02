@@ -227,7 +227,6 @@ impl<R: Read, F: Formatter, L: Filter> RdbParser<R, F, L> {
                 op_code::AUX => {
                     let auxkey = read_blob(&mut self.input)?;
                     let auxval = read_blob(&mut self.input)?;
-
                     self.formatter.aux_field(&auxkey, &auxval);
                 }
                 op_code::Idle => {

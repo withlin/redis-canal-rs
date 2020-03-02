@@ -4,6 +4,7 @@ pub use types::{/* error and result types */ RdbError, RdbOk, RdbResult, Type, Z
 extern crate lzf;
 extern crate redis;
 extern crate regex;
+extern crate hex;
 extern crate serde_json as serialize;
 
 pub mod canal;

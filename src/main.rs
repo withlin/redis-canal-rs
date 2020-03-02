@@ -14,6 +14,15 @@ fn print_usage(program: &str, opts: Options) {
 }
 
 pub fn main() -> redis::RedisResult<()> {
+
+    let mut  offset = std::sync::atomic::AtomicI64::new(1000);
+    println!("{:?}", offset.get_mut());
+    println!("{:?}",  offset.load(std::sync::atomic::Ordering::Relaxed));
+    offset.fetch_add(10, std::sync::atomic::Ordering::Relaxed);
+    println!("{:?}",  offset.load(std::sync::atomic::Ordering::Relaxed));
+    // for i in (0..100).step_by(1) {
+    //     println!("{:?}", i);
+    // }
     //10.1.1.232:7010 10.200.100.219:6379
     let addr = String::from("10.1.1.232:7010");
     let password = "omgredis50".to_string();
@@ -22,7 +31,7 @@ pub fn main() -> redis::RedisResult<()> {
     let mut canal = rdb::Canal::new(addr, db, offset, password);
     canal.dump_and_parse()?;
     Ok(())
-}
+} 
 
 pub fn main1() {
     let mut args = env::args();
