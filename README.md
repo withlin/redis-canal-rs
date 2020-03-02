@@ -5,6 +5,14 @@
 
 redis-canal-rs 是一个redis数据同步工具（支持RDB9解析以及AOF解析工具），支持到redis5.x版本。
 
+## 背景
+
+* Redis数据的跨机房同步
+* 异构数据的迁移；比如Redis到mysql，MQ等
+
+## 设计
+
+模拟redis slave,然后去dump redis master的rdb和aof
 
 ## 用法
 
@@ -21,6 +29,12 @@ pub fn main() -> redis::RedisResult<()> {
 } 
 
 ```
+
+## 接下来要做的东西
+- [ ] 断点续传继续完善
+- [ ] 代码重构
+- [ ] 支持async操作
+- [ ] 支持读取数据后输出的过滤
 
 ## 感谢
 * [rdb-rs](https://github.com/badboy/rdb-rs)
