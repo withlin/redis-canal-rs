@@ -16,8 +16,8 @@ fn print_usage(program: &str, opts: Options) {
 pub fn main() -> redis::RedisResult<()> {
 
     //10.1.1.232:7010 10.200.100.219:6379
-    let addr = String::from("10.1.1.232:7010");
-    let password = "pwd".to_string();
+    let addr = String::from("10.200.100.219:6379");
+    let password = "".to_string();
     let offset = -1;
     let db = 0;
     let mut canal = rdb::Canal::new(addr, db, offset, password);

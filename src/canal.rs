@@ -29,6 +29,8 @@ pub struct Canal {
     pub redisInfo: Rc<Option<redis::InfoDict>>,
 }
 
+
+
 impl Canal {
     pub fn new(addr: String, db: u8, offset: i64, password: String) -> Self {
         let offs= AtomicI64::new(offset);
@@ -235,7 +237,11 @@ impl Canal {
                     let res: String = redis::from_redis_value(&c)?;
                     if res.contains("FULLRESYNC") {
                         let filter = Simple::new();
+                        // let now = std::time::Instant::now();
                         parse(&mut self.conn, formatter::Plain::new(), filter)?;
+                        // parse(&mut self.conn, A{}, filter)?;
+                        // let elapsed = now.elapsed();
+                        // println!("--------------------------------------------------------->parse:{:?}",elapsed);
                     }
                     if res.contains("CONTINUE") {
                         let ss: Vec<&str> = res.split(" ").collect();
